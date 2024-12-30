@@ -1,0 +1,37 @@
+{
+	"editor.formatOnSave": true,
+	"[github-actions-workflow]": {
+		"editor.tabSize": 2,
+		"editor.insertSpaces": true,
+		"editor.detectIndentation": false
+	},
+	"files.exclude": {
+		"**.env": true,
+		".secrets/**": true,
+		"lints": true,
+		"docs": true,
+		"out": true,
+		"refs": true,
+		".bin": true,
+		"types": true,
+		".mypy_cache": true,
+		"Packages": true,
+		"serve": true,
+		"sourcemap.json": true,
+		"*.rbxl": true,
+		"*.blend": true,
+		"*.blend1": true,
+		"build": true,
+		"default.project.json": true,
+		"darklua-sourcemap.json": true,
+		"wally.lock": true,
+	},
+	"runOnSave.defaultRunIn": "terminal",
+	"runOnSave.shell": "C:/Program Files/Git/bin/bash.exe",
+	"runOnSave.statusMessageTimeout": 30000,
+	"runOnSave.onlyRunOnManualSave": false,
+	"stylua.targetReleaseVersion": "latest",
+	"[luau]": {
+		"editor.defaultFormatter": "JohnnyMorganz.stylua"
+	}
+}

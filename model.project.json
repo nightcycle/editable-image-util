@@ -1,0 +1,12 @@
+{
+	"name": "package",
+	"tree": {
+		"$className": "Folder",
+		"Wally": {
+			"$path": "Packages",
+			"Main": {
+				"$path": "src"
+			}
+		}
+	}
+}

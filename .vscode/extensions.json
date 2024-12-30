@@ -1,0 +1,8 @@
+{
+	"recommendations": [
+		"pucelle.run-on-save",
+		"tamasfe.even-better-toml",
+		"johnnymorganz.luau-lsp",
+		"johnnymorganz.stylua",
+	]
+}
