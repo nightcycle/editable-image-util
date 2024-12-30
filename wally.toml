@@ -8,3 +8,5 @@ registry = "https://github.com/upliftgames/wally-index"
 exclude = ["Packages", ".vscode"]
 
 [dependencies]
+Iris = "sirmallard/iris@2.4.1"
+Maid = "nightcycle/maid@2.2.2"
