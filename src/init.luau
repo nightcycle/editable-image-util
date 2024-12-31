@@ -338,6 +338,21 @@ function Util.crop(image: EditableImage, min: Vector2, max: Vector2): EditableIm
 	return output
 end
 
+-- WARNING, this is a slower operation
+function Util.invertChannel(image: EditableImage, channel: Channel): ()
+	local buf = image:ReadPixelsBuffer(Vector2.zero, image.Size)
+	local offset = CHANNEL_INDEX[channel]
+	local rowWidth = 4 * image.Size.X
+	for y=0, image.Size.Y-1 do
+		local base = y * rowWidth
+		for x=0, image.Size.X-1 do
+			local index = base + x * 4 + offset
+			buffer.writeu8(buf, index, 255 - buffer.readu8(buf, index))
+		end
+	end
+	image:WritePixelsBuffer(Vector2.zero, image.Size, buf)
+end
+
 function Util.bind(inst: Instance, image: EditableImage): ()
 	local dependents = DependentRegistry[image] or {}
 	DependentRegistry[image] = dependents
