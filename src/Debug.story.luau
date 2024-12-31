@@ -160,7 +160,7 @@ return function(frame: Frame)
 						Iris.End()
 					end
 					do
-						print("monoState",monoState.value)
+						print("monoState", monoState.value)
 						Iris.CollapsingHeader({
 							[Iris.Args.CollapsingHeader.Text] = "Monocolor",
 						}, { isUncollapsed = Iris.State(true) })
@@ -168,28 +168,24 @@ return function(frame: Frame)
 							Iris.RadioButton({
 								[Iris.Args.RadioButton.Text] = "None",
 								[Iris.Args.RadioButton.Index] = "None",
-
 							}, {
 								index = monoState,
 							})
 							Iris.RadioButton({
 								[Iris.Args.RadioButton.Text] = "R",
 								[Iris.Args.RadioButton.Index] = "R",
-
 							}, {
 								index = monoState,
 							})
 							Iris.RadioButton({
 								[Iris.Args.RadioButton.Text] = "G",
 								[Iris.Args.RadioButton.Index] = "G",
-
 							}, {
 								index = monoState,
 							})
 							Iris.RadioButton({
 								[Iris.Args.RadioButton.Text] = "B",
 								[Iris.Args.RadioButton.Index] = "B",
-
 							}, {
 								index = monoState,
 							})
@@ -222,19 +218,19 @@ return function(frame: Frame)
 						Util.applyValue(canvas, brightnessState.value)
 						Util.tint(canvas, colorState.value)
 						if not isRedChannelEnabled.value then
-							Util.clearChannel(canvas, 0)
+							Util.clearChannel(canvas, "R")
 						end
 						if not isGreenChannelEnabled.value then
-							Util.clearChannel(canvas, 1)
+							Util.clearChannel(canvas, "G")
 						end
 						if not isBlueChannelEnabled.value then
-							Util.clearChannel(canvas, 2)
+							Util.clearChannel(canvas, "B")
 						end
 						if isAlphaChannelVisible.value then
-							Util.clearChannel(canvas, 0)
-							Util.clearChannel(canvas, 1)
-							Util.clearChannel(canvas, 2)
-							Util.shiftChannelRGBA(canvas,1)
+							Util.clearChannel(canvas, "R")
+							Util.clearChannel(canvas, "G")
+							Util.clearChannel(canvas, "B")
+							Util.shiftChannelRGBA(canvas, 1)
 							Util.overwriteF(canvas, nil, nil, nil, 1)
 						end
 						print("duration", math.ceil(10000 * (tick() - start)) / 10, "ms")

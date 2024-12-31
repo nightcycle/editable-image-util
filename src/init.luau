@@ -58,18 +58,18 @@ end
 
 function Util.splitRGB(image: EditableImage): (EditableImage, EditableImage, EditableImage)
 	local r = Util.clone(image)
-	Util.isolateChannel(r, 0)
+	Util.isolateChannel(r, "R")
 	local g = Util.clone(image)
-	Util.isolateChannel(g, 1)
+	Util.isolateChannel(g, "G")
 	local b = Util.clone(image)
-	Util.isolateChannel(b, 2)
+	Util.isolateChannel(b, "B")
 	return r, g, b
 end
 
 function Util.splitRGBA(image: EditableImage): (EditableImage, EditableImage, EditableImage)
 	local r, g, b = Util.splitRGB(image)
 	local a = Util.clone(image)
-	Util.isolateChannel(a, 3)
+	Util.isolateChannel(a, "A")
 	return r, g, b, a
 end
 
@@ -203,7 +203,7 @@ end
 
 function Util.moveChannel(image: EditableImage, source: Channel, target: Channel)
 	local channel = Util.clone(image)
-	Util.isolateChannel(channel, CHANNEL_INDEX[source])
+	Util.isolateChannel(channel, source)
 
 	Util.shiftChannelRGBA(channel, (CHANNEL_INDEX[target] - CHANNEL_INDEX[source]) % 4)
 	if target == "R" then
@@ -225,7 +225,7 @@ function Util.shiftChannelRGB(image: EditableImage, offset: number): ()
 		return
 	end
 	local a = Util.clone(image)
-	Util.isolateChannel(a, 3)
+	Util.isolateChannel(a, "A")
 	Util.moveChannel(image, "B", "A")
 
 	if offset == 1 then
@@ -275,7 +275,8 @@ function Util.toMono(image: EditableImage, channel: Channel): ()
 	end
 end
 
-function Util.isolateChannel(image: EditableImage, offset: number): ()
+function Util.isolateChannel(image: EditableImage, channel: Channel): ()
+	local offset = CHANNEL_INDEX[channel]
 	offset %= 4
 	if offset == 0 then
 		Util.multiplyU8(image, 255, 0, 0, 0)
@@ -288,7 +289,9 @@ function Util.isolateChannel(image: EditableImage, offset: number): ()
 	end
 end
 
-function Util.clearChannel(image: EditableImage, offset: number): ()
+function Util.clearChannel(image: EditableImage, channel: Channel): ()
+	local offset = CHANNEL_INDEX[channel]
+
 	offset %= 4
 	if offset == 0 then
 		Util.multiplyU8(image, 0, 255, 255, 255)
@@ -299,6 +302,13 @@ function Util.clearChannel(image: EditableImage, offset: number): ()
 	else
 		Util.multiplyU8(image, 255, 255, 255, 0)
 	end
+end
+
+function Util.cloneChannel(image: EditableImage, channel: Channel): EditableImage
+	local clone = Util.clone(image)
+	Util.isolateChannel(clone, channel)
+
+	return clone
 end
 
 function Util.replace(canvas: EditableImage, source: EditableImage): ()
