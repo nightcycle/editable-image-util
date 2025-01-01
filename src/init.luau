@@ -333,7 +333,7 @@ function Util.crop(image: EditableImage, min: Vector2, max: Vector2): EditableIm
 
 	local output = newBlank(clampedSize)
 
-	output:WritePixelsBuffer(Vector2.zero, clampedSize, output:ReadPixelsBuffer(min, max-min))
+	output:WritePixelsBuffer(Vector2.zero, clampedSize, output:ReadPixelsBuffer(min, clampedSize))
 
 	return output
 end
