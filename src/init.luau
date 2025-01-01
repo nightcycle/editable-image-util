@@ -327,8 +327,8 @@ function Util.crop(image: EditableImage, min: Vector2, max: Vector2): EditableIm
 	local sourceSize = image.Size
 
 	local targetSize = max - min
-	local clampedWidth = math.min(min.X + targetSize.X, min.X + sourceSize.X) - min.X
-	local clampedHeight = math.min(min.Y + targetSize.Y, min.Y + sourceSize.Y) - min.Y
+	local clampedWidth = math.min(targetSize.X, sourceSize.X)
+	local clampedHeight = math.min(targetSize.Y, sourceSize.Y)
 	local clampedSize = Vector2.new(clampedWidth, clampedHeight)
 
 	local output = newBlank(clampedSize)
