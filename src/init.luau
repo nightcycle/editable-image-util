@@ -201,6 +201,19 @@ end
 -- 	bx:Destroy()
 -- end
 
+function Util.resize(image: EditableImage, size: Vector2, samplingMode: Enum.ResamplerMode?): EditableImage
+	local scaledImage = AssetService:CreateEditableImage({
+		Size = size,
+	})
+	local scale = Vector2.new(size.X / (image.Size.X - 0), size.Y / (image.Size.Y - 0))
+
+	scaledImage:DrawImageTransformed(size / 2, scale, 0, image, {
+		CombineType = Enum.ImageCombineType.Overwrite,
+		SamplingMode = samplingMode or Enum.ResamplerMode.Default,
+	})
+	return scaledImage
+end
+
 function Util.moveChannel(image: EditableImage, source: Channel, target: Channel)
 	local channel = Util.clone(image)
 	Util.isolateChannel(channel, source)
