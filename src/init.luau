@@ -66,7 +66,7 @@ function Util.splitRGB(image: EditableImage): (EditableImage, EditableImage, Edi
 	return r, g, b
 end
 
-function Util.splitRGBA(image: EditableImage): (EditableImage, EditableImage, EditableImage)
+function Util.splitRGBA(image: EditableImage): (EditableImage, EditableImage, EditableImage, EditableImage)
 	local r, g, b = Util.splitRGB(image)
 	local a = Util.clone(image)
 	Util.isolateChannel(a, "A")
@@ -356,9 +356,9 @@ function Util.invertChannel(image: EditableImage, channel: Channel): ()
 	local buf = image:ReadPixelsBuffer(Vector2.zero, image.Size)
 	local offset = CHANNEL_INDEX[channel]
 	local rowWidth = 4 * image.Size.X
-	for y=0, image.Size.Y-1 do
+	for y = 0, image.Size.Y - 1 do
 		local base = y * rowWidth
-		for x=0, image.Size.X-1 do
+		for x = 0, image.Size.X - 1 do
 			local index = base + x * 4 + offset
 			buffer.writeu8(buf, index, 255 - buffer.readu8(buf, index))
 		end

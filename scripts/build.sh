@@ -27,6 +27,7 @@ do
 	# fi
 done
 
+
 # create build directory
 echo "clearing and making $build_dir"
 rm -f $SOURCEMAP
@@ -62,13 +63,14 @@ rojo sourcemap "$MODEL_ROJO_CONFIG" -o "$SOURCEMAP"
 # process files
 echo "running stylua"
 stylua "$build_dir/src"
+rojo sourcemap "dev.project.json" -o "sourcemap.json"
 
 # run darklua
 if [ "$is_serve" = true ]; then
 	echo "running serve darklua"
 	rojo sourcemap --watch "$ROJO_CONFIG" -o "$SOURCEMAP" &
-	darklua process "src" "$build_dir/src" --config "$DARKLUA_CONFIG" -w & 
-	# darklua process "node_modules" "$build_dir/node_modules" --config "$DARKLUA_CONFIG" -w & 
+	darklua process "src" "$build_dir/src" --config "$DARKLUA_CONFIG" -w &
+	# darklua process "node_modules" "$build_dir/node_modules" --config "$DARKLUA_CONFIG" -w &
 else
 	echo "running build darklua"
 	rojo sourcemap "$build_dir/$ROJO_CONFIG" -o "$build_dir/$SOURCEMAP"
@@ -79,6 +81,7 @@ fi
 # final compile
 if [ "$is_serve" = true ]; then
 	echo "running serve"
+	rojo build "$ROJO_CONFIG" -o "Package.rbxl"
 	rojo serve "$build_dir/$ROJO_CONFIG"
 else
 	echo "build rbxl"

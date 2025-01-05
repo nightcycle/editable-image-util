@@ -9,7 +9,7 @@ local Iris = require("@wally/Iris")
 -- Types
 
 -- Constants
-local IMAGE_TEXTURE = "rbxassetid://71256686914564"
+local IMAGE_TEXTURE = "rbxassetid://136097158177934"
 -- Variables
 -- References
 -- Class

@@ -4,5 +4,6 @@
 		"tamasfe.even-better-toml",
 		"johnnymorganz.luau-lsp",
 		"johnnymorganz.stylua",
+		"tacheometrist.testez-companion"
 	]
 }

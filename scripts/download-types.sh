@@ -7,7 +7,7 @@ fi
 curl -L "https://raw.githubusercontent.com/JohnnyMorganz/luau-lsp/main/scripts/globalTypes.d.lua" > "types/globalTypes.d.lua"
 curl -L "https://gist.githubusercontent.com/nightcycle/3ecee1b598c4e1d26acd7a2899ff4350/raw/527b11c49aa70b23ff5d14b37966a832c13e8475/bench.d.lua" > "types/benchmark.d.lua"
 curl -L "https://gist.githubusercontent.com/nightcycle/3ecee1b598c4e1d26acd7a2899ff4350/raw/527b11c49aa70b23ff5d14b37966a832c13e8475/bench.d.lua" > "types/bench.d.lua"
-
+curl -L "https://gist.github.com/nightcycle/50ca8f42147077b8f584b503030c8500/raw" > "types/testEZ.d.lua"
 # lint definitions
 if [ ! -d "lints" ]; then
   mkdir "lints"
