@@ -8,21 +8,28 @@ local AssetService = game:GetService("AssetService")
 
 -- Constants
 local SAMPLE_SIZE = 256
+local SKIP_ENABLED = false
 -- Variables
 -- References
 
 -- Class
 return function(): ()
 	describe("memory", function()
+		if SKIP_ENABLED then
+			SKIP()
+		end
 		local Util = require(script.Parent)
 		local image: EditableImage
-		beforeAll(function()
-			image = AssetService:CreateEditableImage({ Size = Vector2.one * 1024 })
-		end)
 
-		afterAll(function()
-			image:Destroy()
-		end)
+		if not SKIP_ENABLED then
+			beforeAll(function()
+				image = AssetService:CreateEditableImage({ Size = Vector2.one * 1024 })
+			end)
+
+			afterAll(function()
+				image:Destroy()
+			end)
+		end
 
 		describe("add", function()
 			it("float", function()
