@@ -81,24 +81,24 @@ return function(): ()
 			end
 		end)
 
-		it("clone", function()
+		it("try-clone", function()
 			for i = 1, SAMPLE_SIZE do
-				Util.clone(image):Destroy()
+				Util.tryClone(image):unwrap():Destroy()
 			end
 		end)
 
 		it("clone-channel", function()
 			for i = 1, SAMPLE_SIZE do
-				Util.cloneChannel(image, "R"):Destroy()
-				Util.cloneChannel(image, "G"):Destroy()
-				Util.cloneChannel(image, "B"):Destroy()
-				Util.cloneChannel(image, "A"):Destroy()
+				Util.tryCloneChannel(image, "R"):unwrap():Destroy()
+				Util.tryCloneChannel(image, "G"):unwrap():Destroy()
+				Util.tryCloneChannel(image, "B"):unwrap():Destroy()
+				Util.tryCloneChannel(image, "A"):unwrap():Destroy()
 			end
 		end)
 
-		it("crop", function()
+		it("try-crop", function()
 			for i = 1, SAMPLE_SIZE do
-				Util.crop(image, Vector2.one, image.Size / 2):Destroy()
+				Util.tryCrop(image, Vector2.one, image.Size / 2):unwrap():Destroy()
 			end
 		end)
 
@@ -185,14 +185,14 @@ return function(): ()
 		end)
 		it("replace", function()
 			for i = 1, SAMPLE_SIZE do
-				local newImage = Util.clone(image)
+				local newImage = Util.tryClone(image):unwrap()
 				Util.replace(image, newImage)
 				newImage:Destroy()
 			end
 		end)
-		it("resize", function()
+		it("try-resize", function()
 			for i = 1, SAMPLE_SIZE do
-				Util.resize(image, image.Size / 2):Destroy()
+				Util.tryResize(image, image.Size / 2):unwrap():Destroy()
 			end
 		end)
 
@@ -212,22 +212,22 @@ return function(): ()
 			end)
 		end)
 
-		describe("split", function()
+		describe("try-split", function()
 			it("rgb", function()
 				for i = 1, SAMPLE_SIZE do
-					local r, g, b = Util.splitRGB(image)
-					r:Destroy()
-					g:Destroy()
-					b:Destroy()
+					local rgb = Util.trySplitRGB(image):unwrap()
+					rgb.R:Destroy()
+					rgb.G:Destroy()
+					rgb.B:Destroy()
 				end
 			end)
 			it("rgba", function()
 				for i = 1, SAMPLE_SIZE do
-					local r, g, b, a = Util.splitRGBA(image)
-					r:Destroy()
-					g:Destroy()
-					b:Destroy()
-					a:Destroy()
+					local rgba = Util.trySplitRGBA(image):unwrap()
+					rgba.R:Destroy()
+					rgba.G:Destroy()
+					rgba.B:Destroy()
+					rgba.A:Destroy()
 				end
 			end)
 		end)
@@ -244,30 +244,6 @@ return function(): ()
 				Util.toMono(image, "G")
 				Util.toMono(image, "B")
 				Util.toMono(image, "A")
-			end
-		end)
-
-		it("bind", function()
-			for i = 1, SAMPLE_SIZE do
-				local subImage = Util.clone(image)
-				local inst = Instance.new("Part")
-				Util.bind(inst, subImage)
-				inst:Destroy()
-			end
-		end)
-		it("unbind", function()
-			for i = 1, SAMPLE_SIZE do
-				local subImage = Util.clone(image)
-				Util.bind(game, subImage)
-				Util.unbind(game, subImage)
-			end
-		end)
-
-		it("unbind-all", function()
-			for i = 1, SAMPLE_SIZE do
-				local subImage = Util.clone(image)
-				Util.bind(game, subImage)
-				Util.unbindAll(game)
 			end
 		end)
 	end)

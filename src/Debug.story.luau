@@ -28,7 +28,7 @@ return function(frame: Frame)
 		-- 	source:DrawRectangle(Vector2.new(x,0), Vector2.new(1, source.Size.Y-1), Color3.fromHSV(x/source.Size.X, 1, 1), 0, Enum.ImageCombineType.Overwrite)
 		-- end
 
-		local canvas = maid:GiveTask(Util.clone(source))
+		local canvas = maid:GiveTask(Util.tryClone(source):unwrap())
 		imageLabel.Size = UDim2.fromOffset(canvas.Size.X, canvas.Size.Y)
 		imageLabel.ImageContent = Content.fromObject(canvas)
 		imageLabel.Parent = frame

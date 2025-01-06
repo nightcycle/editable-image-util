@@ -97,27 +97,27 @@ return {
 	BeforeEach = function() end,
 	Functions = {
 
-		[`clone-channel-{DIM}`] = function(profiler: BenchmarkProfiler, parameter: Parameter)
-			Util.cloneChannel(Canvas, parameter.RGBAChannel):Destroy()
+		[`try-clone-channel-{DIM}`] = function(profiler: BenchmarkProfiler, parameter: Parameter)
+			Util.tryCloneChannel(Canvas, parameter.RGBAChannel):unwrap():Destroy()
 		end,
-		[`crop-{DIM}`] = function(profiler: BenchmarkProfiler, parameter: Parameter)
-			Util.crop(Canvas, parameter.Area.Min, parameter.Area.Max):Destroy()
+		[`try-crop-{DIM}`] = function(profiler: BenchmarkProfiler, parameter: Parameter)
+			Util.tryCrop(Canvas, parameter.Area.Min, parameter.Area.Max):unwrap():Destroy()
 		end,
-		[`resize-{DIM}`] = function(profiler: BenchmarkProfiler, parameter: Parameter)
-			Util.resize(Canvas, parameter.Size, parameter.SamplingMode):Destroy()
+		[`try-resize-{DIM}`] = function(profiler: BenchmarkProfiler, parameter: Parameter)
+			Util.tryResize(Canvas, parameter.Size, parameter.SamplingMode):unwrap():Destroy()
 		end,
-		[`split-rgb-{DIM}`] = function(profiler: BenchmarkProfiler, parameter: Parameter)
-			local r, g, b = Util.splitRGB(Canvas)
-			r:Destroy()
-			g:Destroy()
-			b:Destroy()
+		[`try-split-rgb-{DIM}`] = function(profiler: BenchmarkProfiler, parameter: Parameter)
+			local rgb = Util.trySplitRGB(Canvas):unwrap()
+			rgb.R:Destroy()
+			rgb.G:Destroy()
+			rgb.B:Destroy()
 		end,
-		[`split-rgba-{DIM}`] = function(profiler: BenchmarkProfiler, parameter: Parameter)
-			local r, g, b, a = Util.splitRGBA(Canvas)
-			r:Destroy()
-			g:Destroy()
-			b:Destroy()
-			a:Destroy()
+		[`try-split-rgba-{DIM}`] = function(profiler: BenchmarkProfiler, parameter: Parameter)
+			local rgb = Util.trySplitRGBA(Canvas):unwrap()
+			rgb.R:Destroy()
+			rgb.G:Destroy()
+			rgb.B:Destroy()
+			rgb.A:Destroy()
 		end,
 	},
 } :: BenchModule<Parameter>
