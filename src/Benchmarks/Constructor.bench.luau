@@ -10,6 +10,7 @@ type Parameter = {
 	RGBAChannel: Util.Channel,
 	SaturationF: number,
 	ValueF: number,
+	HueF: number,
 	RU8: number,
 	GU8: number,
 	BU8: number,
@@ -59,6 +60,7 @@ return {
 			RGBAChannel = indexToChannel(rgbaChannelIndex),
 			SaturationF = rng:NextNumber(),
 			ValueF = rng:NextNumber(),
+			HueF = rng:NextNumber(),
 			RU8 = rng:NextInteger(0, 255),
 			GU8 = rng:NextInteger(0, 255),
 			BU8 = rng:NextInteger(0, 255),
@@ -94,56 +96,15 @@ return {
 	AfterEach = function() end,
 	BeforeEach = function() end,
 	Functions = {
-		[`add-{DIM}`] = function(profiler: BenchmarkProfiler, parameter: Parameter)
-			Util.addU8(Canvas, parameter.AU8, parameter.BU8, parameter.GU8, parameter.RU8)
-		end,
-		[`apply-saturation-{DIM}`] = function(profiler: BenchmarkProfiler, parameter: Parameter)
-			Util.applySaturation(Canvas, parameter.SaturationF)
-		end,
-		[`apply-value-{DIM}`] = function(profiler: BenchmarkProfiler, parameter: Parameter)
-			Util.applyValue(Canvas, parameter.ValueF)
-		end,
-		[`clear-channel-{DIM}`] = function(profiler: BenchmarkProfiler, parameter: Parameter)
-			Util.clearChannel(Canvas, parameter.RGBAChannel)
-		end,
+
 		[`clone-channel-{DIM}`] = function(profiler: BenchmarkProfiler, parameter: Parameter)
 			Util.cloneChannel(Canvas, parameter.RGBAChannel):Destroy()
 		end,
 		[`crop-{DIM}`] = function(profiler: BenchmarkProfiler, parameter: Parameter)
 			Util.crop(Canvas, parameter.Area.Min, parameter.Area.Max):Destroy()
 		end,
-		[`fill-{DIM}`] = function(profiler: BenchmarkProfiler, parameter: Parameter)
-			Util.fillU8(Canvas, parameter.AU8, parameter.BU8, parameter.GU8, parameter.RU8)
-		end,
-		[`invert-channel-{DIM}`] = function(profiler: BenchmarkProfiler, parameter: Parameter)
-			Util.invertChannel(Canvas, parameter.RGBAChannel)
-		end,
-		[`isolate-channel-{DIM}`] = function(profiler: BenchmarkProfiler, parameter: Parameter)
-			Util.isolateChannel(Canvas, parameter.RGBAChannel)
-		end,
-		[`multiply-{DIM}`] = function(profiler: BenchmarkProfiler, parameter: Parameter)
-			Util.multiplyU8(Canvas, parameter.RU8, parameter.GU8, parameter.BU8, parameter.AU8)
-		end,
-		[`overwrite-{DIM}`] = function(profiler: BenchmarkProfiler, parameter: Parameter)
-			Util.overwriteU8(
-				Canvas,
-				if parameter.FocusR then parameter.RU8 else nil,
-				if parameter.FocusG then parameter.GU8 else nil,
-				if parameter.FocusB then parameter.BU8 else nil,
-				if parameter.FocusA then parameter.AU8 else nil
-			)
-		end,
-		[`replace-{DIM}`] = function(profiler: BenchmarkProfiler, parameter: Parameter)
-			Util.replace(Canvas, Source)
-		end,
 		[`resize-{DIM}`] = function(profiler: BenchmarkProfiler, parameter: Parameter)
 			Util.resize(Canvas, parameter.Size, parameter.SamplingMode):Destroy()
-		end,
-		[`shift-channel-rgb-{DIM}`] = function(profiler: BenchmarkProfiler, parameter: Parameter)
-			Util.shiftChannelRGB(Canvas, parameter.OffsetRGB)
-		end,
-		[`shift-channel-rgba-{DIM}`] = function(profiler: BenchmarkProfiler, parameter: Parameter)
-			Util.shiftChannelRGBA(Canvas, parameter.OffsetRGBA)
 		end,
 		[`split-rgb-{DIM}`] = function(profiler: BenchmarkProfiler, parameter: Parameter)
 			local r, g, b = Util.splitRGB(Canvas)
@@ -157,12 +118,6 @@ return {
 			g:Destroy()
 			b:Destroy()
 			a:Destroy()
-		end,
-		[`tint-{DIM}`] = function(profiler: BenchmarkProfiler, parameter: Parameter)
-			Util.tint(Canvas, parameter.Tint)
-		end,
-		[`to-mono-{DIM}`] = function(profiler: BenchmarkProfiler, parameter: Parameter)
-			Util.toMono(Canvas, parameter.RGBAChannel)
 		end,
 	},
 } :: BenchModule<Parameter>

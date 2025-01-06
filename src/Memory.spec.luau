@@ -51,15 +51,15 @@ return function(): ()
 			end)
 		end)
 
-		it("apply-saturation", function()
+		it("set-contrast", function()
 			for i = 1, SAMPLE_SIZE do
-				Util.applySaturation(image, 1 - 1 / SAMPLE_SIZE)
+				Util.setContrast(image, 1 - 1 / SAMPLE_SIZE)
 			end
 		end)
 
-		it("apply-value", function()
+		it("set-brightness", function()
 			for i = 1, SAMPLE_SIZE do
-				Util.applyValue(image, 1 - 1 / SAMPLE_SIZE)
+				Util.setBrightness(image, 1 - 1 / SAMPLE_SIZE)
 			end
 		end)
 

@@ -45,6 +45,28 @@ function Util.fillF(image: EditableImage, rF: number, gF: number, bF: number, aF
 	Util.fillU8(image, math.round(rF * 255), math.round(gF * 255), math.round(bF * 255), math.round(aF * 255))
 end
 
+function Util.subtractU8(image: EditableImage, rU8: number, gU8: number, bU8: number, aU8: number): ()
+	if aU8 == 0 then
+		Util.readForEachPixelRGB(image, function(r, g, b)
+			return r - rU8, g - gU8, b - bU8
+		end)
+	else
+		Util.readForEachPixelRGBA(image, function(r, g, b, a)
+			return r - rU8, g - gU8, b - bU8, a - aU8
+		end)
+	end
+end
+
+function Util.subtractF(image: EditableImage, rF: number, gF: number, bF: number, aF: number): ()
+	Util.subtractU8(
+		image,
+		math.round(rF * 255),
+		math.round(gF * 255),
+		math.round(bF * 255),
+		math.round(aF * 255)
+	)
+end
+
 function Util.addU8(image: EditableImage, rU8: number, gU8: number, bU8: number, aU8: number): ()
 	local mask = newBlank(image.Size)
 	Util.fillU8(mask, rU8, gU8, bU8, aU8)
@@ -74,15 +96,31 @@ function Util.splitRGBA(image: EditableImage): (EditableImage, EditableImage, Ed
 end
 
 function Util.multiplyU8(image: EditableImage, rU8: number, gU8: number, bU8: number, aU8: number): ()
-	rU8 = math.max(rU8, 1)
-	gU8 = math.max(gU8, 1)
-	bU8 = math.max(bU8, 1)
-	aU8 = math.max(aU8, 1)
+	if rU8 > 255 or gU8 > 255 or bU8 > 255 or aU8 > 255 then
+		local rF = rU8 / 255
+		local gF = gU8 / 255
+		local bF = bU8 / 255
+		if aU8 == 255 then
+			Util.writeForEachPixelRGB(image, function(r, g, b)
+				return r * rF, g * gF, b * bF
+			end)
+		else
+			local aF = aU8 / 255
+			Util.writeForEachPixelRGBA(image, function(r, g, b, a)
+				return r * rF, g * gF, b * bF, a * aF
+			end)
+		end
+	else
+		rU8 = math.max(rU8, 1)
+		gU8 = math.max(gU8, 1)
+		bU8 = math.max(bU8, 1)
+		aU8 = math.max(aU8, 1)
 
-	local mask = newBlank(image.Size)
-	Util.fillU8(mask, rU8, gU8, bU8, aU8)
-	image:DrawImage(Vector2.zero, mask, Enum.ImageCombineType.Multiply)
-	mask:Destroy()
+		local mask = newBlank(image.Size)
+		Util.fillU8(mask, rU8, gU8, bU8, aU8)
+		image:DrawImage(Vector2.zero, mask, Enum.ImageCombineType.Multiply)
+		mask:Destroy()
+	end
 end
 
 function Util.multiplyF(image: EditableImage, rF: number, gF: number, bF: number, aF: number): ()
@@ -116,6 +154,22 @@ function Util.overwriteF(image: EditableImage, rF: number?, gF: number?, bF: num
 	)
 end
 
+function Util.shiftChannelRGB(image: EditableImage, offset: number): ()
+	offset %= 3
+	if offset == 0 then
+		return
+	end
+	if offset == 1 then
+		Util.writeForEachPixelRGB(image, function(rU8, gU8, bU8)
+			return bU8, rU8, gU8
+		end)
+	else
+		Util.writeForEachPixelRGB(image, function(rU8, gU8, bU8)
+			return gU8, bU8, rU8
+		end)
+	end
+end
+
 function Util.shiftChannelRGBA(image: EditableImage, offset: number): ()
 	offset %= 4
 	if offset == 0 then
@@ -128,78 +182,346 @@ function Util.shiftChannelRGBA(image: EditableImage, offset: number): ()
 	image:WritePixelsBuffer(Vector2.zero, image.Size, newBuf)
 end
 
--- impossible until I can find a way to subtract images
--- https://stackoverflow.com/questions/8507885/shift-hue-of-an-rgb-color
--- function Util.shiftHue(image: EditableImage, hue: number): ()
--- 	hue %= 1
--- 	if hue == 0 or hue == 1 then
--- 		return
--- 	end
--- 	local rotation = math.rad(hue*360)
--- 	local cosA = math.cos(rotation)
--- 	local sinA = math.sin(rotation)
--- 	local r1 = cosA + (1.0 - cosA) / 3.0
--- 	local g1 = 1./3. * (1.0 - cosA) - math.sqrt(1./3.) * sinA
--- 	local b1 = 1./3. * (1.0 - cosA) + math.sqrt(1./3.) * sinA
--- 	local r2 = 1./3. * (1.0 - cosA) + math.sqrt(1./3.) * sinA
--- 	local g2 = cosA + 1./3.*(1.0 - cosA)
--- 	local b2 = 1./3. * (1.0 - cosA) - math.sqrt(1./3.) * sinA
--- 	local r3 = 1./3. * (1.0 - cosA) - math.sqrt(1./3.) * sinA
--- 	local g3 = 1./3. * (1.0 - cosA) + math.sqrt(1./3.) * sinA
--- 	local b3 = cosA + 1./3. * (1.0 - cosA)
+function Util.forEachPixelXY(
+	image: EditableImage,
+	isReadOnly: boolean,
+	callback: (buf: buffer, x: number, y: number) -> ()
+): ()
+	local buf = image:ReadPixelsBuffer(Vector2.zero, image.Size)
+	local xReps = image.Size.X - 1
+	for y = 0, image.Size.Y - 1 do
+		for x = 0, xReps do
+			callback(buf, x, y)
+		end
+	end
+	if not isReadOnly then
+		image:WritePixelsBuffer(Vector2.zero, image.Size, buf)
+	end
+end
 
--- 	local r = Util.clone(image)
--- 	Util.isolateChannel(r, 0)
+function Util.forEachPixelXYI(
+	image: EditableImage,
+	isReadOnly: boolean,
+	callback: (buf: buffer, x: number, y: number, i: number) -> ()
+): ()
+	local buf = image:ReadPixelsBuffer(Vector2.zero, image.Size)
+	local rowWidth = 4 * image.Size.X
+	local xReps = image.Size.X - 1
+	for y = 0, image.Size.Y - 1 do
+		local base = y * rowWidth
+		for x = 0, xReps do
+			callback(buf, x, y, base + x * 4)
+		end
+	end
+	if not isReadOnly then
+		image:WritePixelsBuffer(Vector2.zero, image.Size, buf)
+	end
+end
 
--- 	local g = Util.clone(image)
--- 	Util.isolateChannel(g, 1)
+function Util.forEachPixelStartIndex(
+	image: EditableImage,
+	isReadOnly: boolean,
+	callback: (buf: buffer, i: number) -> ()
+): ()
+	local buf = image:ReadPixelsBuffer(Vector2.zero, image.Size)
+	local rowWidth = 4 * image.Size.X
+	local xReps = image.Size.X - 1
+	for y = 0, image.Size.Y - 1 do
+		local base = y * rowWidth
+		for x = 0, xReps do
+			callback(buf, base + x * 4)
+		end
+	end
+	if not isReadOnly then
+		image:WritePixelsBuffer(Vector2.zero, image.Size, buf)
+	end
+end
 
--- 	local b = Util.clone(image)
--- 	Util.isolateChannel(b, 2)
+function Util.readForEachPixelRGB(
+	image: EditableImage,
+	callback: (rU8: number, gU8: number, bU8: number) -> ()
+): ()
+	Util.forEachPixelStartIndex(image, true, function(buf: buffer, i: number)
+		callback(buffer.readu8(buf, i + 0), buffer.readu8(buf, i + 1), buffer.readu8(buf, i + 2))
+	end)
+end
 
--- 	local a = Util.clone(image)
--- 	Util.isolateChannel(a, 3)
+function Util.writeForEachPixelRGB(
+	image: EditableImage,
+	callback: (rU8: number, gU8: number, bU8: number) -> (number, number, number)
+): ()
+	Util.forEachPixelStartIndex(image, false, function(buf: buffer, i: number)
+		local rI = i + 0
+		local gI = i + 1
+		local bI = i + 2
+		local r, g, b = callback(buffer.readu8(buf, rI), buffer.readu8(buf, gI), buffer.readu8(buf, bI))
+		buffer.writeu8(buf, rI, r)
+		buffer.writeu8(buf, gI, g)
+		buffer.writeu8(buf, bI, b)
+	end)
+end
 
--- 	local function combineChannels(targetChannel: number, rWeight: number, gWeight: number, bWeight: number): EditableImage
--- 		local rC = Util.clone(r)
--- 		local gC = Util.clone(g)
--- 		local bC = Util.clone(b)
+function Util.readForEachPixelRGBA(
+	image: EditableImage,
+	callback: (
+		rU8: number,
+		gU8: number,
+		bU8: number,
+		aU8: number
+	) -> ()
+): ()
+	Util.forEachPixelStartIndex(image, true, function(buf: buffer, i: number)
+		callback(
+			buffer.readu8(buf, i + 0),
+			buffer.readu8(buf, i + 1),
+			buffer.readu8(buf, i + 2),
+			buffer.readu8(buf, i + 3)
+		)
+	end)
+end
 
--- 		targetChannel %= 3
--- 		if targetChannel == 0 then
--- 			Util.shiftChannelRGB(bC, 1)
--- 			Util.shiftChannelRGB(gC, 2)
--- 		elseif targetChannel == 1 then
--- 			Util.shiftChannelRGB(rC, 1)
--- 			Util.shiftChannelRGB(bC, 2)
--- 		else
--- 			Util.shiftChannelRGB(gC, 1)
--- 			Util.shiftChannelRGB(rC, 2)
--- 		end
--- 		rC:DrawImage(Vector2.zero, gC, Enum.ImageCombineType.Add)
--- 		rC:DrawImage(Vector2.zero, bC, Enum.ImageCombineType.Add)
--- 		gC:Destroy()
--- 		bC:Destroy()
--- 		return rC
--- 	end
+function Util.writeForEachPixelRGBA(
+	image: EditableImage,
+	callback: (
+		rU8: number,
+		gU8: number,
+		bU8: number,
+		aU8: number
+	) -> (number, number, number, number)
+): ()
+	Util.forEachPixelStartIndex(image, false, function(buf: buffer, i: number)
+		local rI = i + 0
+		local gI = i + 1
+		local bI = i + 2
+		local aI = i + 3
+		local rU8, gU8, bU8, aU8 = callback(
+			buffer.readu8(buf, rI),
+			buffer.readu8(buf, gI),
+			buffer.readu8(buf, bI),
+			buffer.readu8(buf, aI)
+		)
+		buffer.writeu8(buf, rI, rU8)
+		buffer.writeu8(buf, gI, gU8)
+		buffer.writeu8(buf, bI, bU8)
+		buffer.writeu8(buf, aI, aU8)
+	end)
+end
 
--- 	print("r1", r1, "g1", g1, "b1", b1)
--- 	local rx = combineChannels(0, r1, g1, b1)
--- 	local gx = combineChannels(1, r2, g2, b2)
--- 	local bx = combineChannels(2, r3, g3, b3)
+do
+	-- https://math.stackexchange.com/questions/556341/rgb-to-hsv-color-conversion-algorithm
+	local function toHSV(rF: number, gF: number, bF: number): (number, number, number)
+		local maxC = math.max(rF, gF, bF)
+		local minC = math.min(rF, gF, bF)
+		local rng = (maxC - minC)
+		if rng == 0 then
+			return 0, 0, maxC
+		end
 
--- 	a:DrawImage(Vector2.zero, rx, Enum.ImageCombineType.Add)
--- 	a:DrawImage(Vector2.zero, gx, Enum.ImageCombineType.Add)
--- 	a:DrawImage(Vector2.zero, bx, Enum.ImageCombineType.Add)
--- 	image:DrawImage(Vector2.zero, a, Enum.ImageCombineType.Overwrite)
--- 	r:Destroy()
--- 	g:Destroy()
--- 	b:Destroy()
--- 	a:Destroy()
--- 	rx:Destroy()
--- 	gx:Destroy()
--- 	bx:Destroy()
--- end
+		local vF = maxC
+		local sF = rng / maxC
+		local rC = (maxC - rF) / rng
+		local gC = (maxC - gF) / rng
+		local bC = (maxC - bF) / rng
+		local hF: number
+		if rF == maxC then
+			hF = bC - gC
+		elseif gF == maxC then
+			hF = 2 + rC - bC
+		else
+			hF = 4 + gC - rC
+		end
+		hF /= 6
+		hF %= 1
+
+		return hF, sF, vF
+	end
+
+	local function toRGB(hF: number, sF: number, vF: number): (number, number, number)
+		local h6 = hF * 6
+		local i = math.floor(h6)
+		local f = h6 - i
+
+		if i < 3 then
+			if i <= 1 then
+				if i == 0 then --i=0
+					return vF, vF * (1 - ((1 - f) * sF)), vF * (1 - sF)
+				else -- i=1
+					return vF * (1 - (f * sF)), vF, vF * (1 - sF)
+				end
+			else -- i=2
+				return vF * (1 - sF), vF, vF * (1 - ((1 - f) * sF))
+			end
+		else
+			if i == 3 then -- i=3
+				return vF * (1 - sF), vF * (1 - (f * sF)), vF
+			else
+				if i == 4 then -- i=4
+					return vF * (1 - ((1 - f) * sF)), vF * (1 - sF), vF
+				else -- i=5
+					return vF, vF * (1 - sF), vF * (1 - (f * sF))
+				end
+			end
+		end
+	end
+
+	function Util.readForEachPixelHSVA(
+		image: EditableImage,
+		callback: (
+			hF: number,
+			sF: number,
+			vF: number,
+			aU8: number
+		) -> ()
+	): ()
+		Util.forEachPixelStartIndex(image, true, function(buf: buffer, i: number)
+			local rI = i + 0
+			local gI = i + 1
+			local bI = i + 2
+			local aI = i + 3
+			local rU8, gU8, bU8, aU8 =
+				buffer.readu8(buf, rI), buffer.readu8(buf, gI), buffer.readu8(buf, bI), buffer.readu8(buf, aI)
+			local hF, sF, vF = toHSV(rU8 / 255, gU8 / 255, bU8 / 255)
+			callback(hF, sF, vF, aU8)
+		end)
+	end
+
+	function Util.writeForEachPixelHSVA(
+		image: EditableImage,
+		callback: (
+			hF: number,
+			sF: number,
+			vF: number,
+			aU8: number
+		) -> (number, number, number, number)
+	): ()
+		Util.forEachPixelStartIndex(image, false, function(buf: buffer, i: number)
+			local rI = i + 0
+			local gI = i + 1
+			local bI = i + 2
+			local aI = i + 3
+			local rU8, gU8, bU8, aU8 =
+				buffer.readu8(buf, rI), buffer.readu8(buf, gI), buffer.readu8(buf, bI), buffer.readu8(buf, aI)
+			local hF, sF, vF = toHSV(rU8 / 255, gU8 / 255, bU8 / 255)
+			hF, sF, vF, aU8 = callback(hF, sF, vF, aU8)
+			local rF, gF, bF = toRGB(hF, sF, vF)
+			buffer.writeu8(buf, rI, rF * 255)
+			buffer.writeu8(buf, gI, gF * 255)
+			buffer.writeu8(buf, bI, bF * 255)
+			buffer.writeu8(buf, aI, aU8)
+		end)
+	end
+
+	function Util.readForEachPixelHSV(
+		image: EditableImage,
+		callback: (hF: number, sF: number, vF: number) -> ()
+	): ()
+		Util.forEachPixelStartIndex(image, true, function(buf: buffer, i: number)
+			local rI = i + 0
+			local gI = i + 1
+			local bI = i + 2
+			local rU8, gU8, bU8 = buffer.readu8(buf, rI), buffer.readu8(buf, gI), buffer.readu8(buf, bI)
+			local hF, sF, vF = toHSV(rU8 / 255, gU8 / 255, bU8 / 255)
+			callback(hF, sF, vF)
+		end)
+	end
+
+	function Util.writeForEachPixelHSV(
+		image: EditableImage,
+		callback: (
+			hF: number,
+			sF: number,
+			vF: number
+		) -> (number, number, number)
+	): ()
+		Util.forEachPixelStartIndex(image, false, function(buf: buffer, i: number)
+			local rI = i + 0
+			local gI = i + 1
+			local bI = i + 2
+			local rU8, gU8, bU8 = buffer.readu8(buf, rI), buffer.readu8(buf, gI), buffer.readu8(buf, bI)
+			local hF, sF, vF = toHSV(rU8 / 255, gU8 / 255, bU8 / 255)
+			hF, sF, vF = callback(hF, sF, vF)
+			local rF, gF, bF = toRGB(hF, sF, vF)
+			buffer.writeu8(buf, rI, rF * 255)
+			buffer.writeu8(buf, gI, gF * 255)
+			buffer.writeu8(buf, bI, bF * 255)
+		end)
+	end
+
+	function Util.addHSV(image: EditableImage, hF: number, sF: number, vF: number, skipMod: boolean?): ()
+		if skipMod then
+			Util.writeForEachPixelHSV(image, function(h, s, v)
+				return h + hF, s + sF, v + vF
+			end)
+		else
+			Util.writeForEachPixelHSV(image, function(h, s, v)
+				return (h + hF) % 1, (s + sF) % 1, (v + vF) % 1
+			end)
+		end
+	end
+
+	function Util.multiplyHSV(image: EditableImage, hF: number, sF: number, vF: number, skipMod: boolean?): ()
+		if skipMod then
+			Util.writeForEachPixelHSV(image, function(h, s, v)
+				return h * hF, s * sF, v * vF
+			end)
+		else
+			Util.writeForEachPixelHSV(image, function(h, s, v)
+				return (h * hF) % 1, (s * sF) % 1, (v * vF) % 1
+			end)
+		end
+	end
+end
+
+function Util.readForEachInPixelChannel(
+	image: EditableImage,
+	channel: Channel,
+	callback: (vU8: number) -> ()
+): ()
+	if channel == "R" then
+		Util.forEachPixelStartIndex(image, true, function(buf: buffer, i: number)
+			callback(buffer.readu8(buf, i))
+		end)
+	elseif channel == "G" then
+		Util.forEachPixelStartIndex(image, true, function(buf: buffer, i: number)
+			callback(buffer.readu8(buf, i + 1))
+		end)
+	elseif channel == "B" then
+		Util.forEachPixelStartIndex(image, true, function(buf: buffer, i: number)
+			callback(buffer.readu8(buf, i + 2))
+		end)
+	else
+		Util.forEachPixelStartIndex(image, true, function(buf: buffer, i: number)
+			callback(buffer.readu8(buf, i + 3))
+		end)
+	end
+end
+
+function Util.writeForEachInPixelChannel(
+	image: EditableImage,
+	channel: Channel,
+	callback: (vU8: number) -> number
+): ()
+	if channel == "R" then
+		Util.forEachPixelStartIndex(image, false, function(buf: buffer, i: number)
+			buffer.writeu8(buf, i, callback(buffer.readu8(buf, i)))
+		end)
+	elseif channel == "G" then
+		Util.forEachPixelStartIndex(image, false, function(buf: buffer, i: number)
+			i += 1
+			buffer.writeu8(buf, i, callback(buffer.readu8(buf, i)))
+		end)
+	elseif channel == "B" then
+		Util.forEachPixelStartIndex(image, false, function(buf: buffer, i: number)
+			i += 2
+			buffer.writeu8(buf, i, callback(buffer.readu8(buf, i)))
+		end)
+	else
+		Util.forEachPixelStartIndex(image, false, function(buf: buffer, i: number)
+			i += 3
+			buffer.writeu8(buf, i, callback(buffer.readu8(buf, i)))
+		end)
+	end
+end
 
 function Util.resize(image: EditableImage, size: Vector2, samplingMode: Enum.ResamplerMode?): EditableImage
 	local scaledImage = AssetService:CreateEditableImage({
@@ -232,39 +554,15 @@ function Util.moveChannel(image: EditableImage, source: Channel, target: Channel
 	channel:Destroy()
 end
 
-function Util.shiftChannelRGB(image: EditableImage, offset: number): ()
-	offset %= 3
-	if offset == 0 then
-		return
-	end
-	local a = Util.clone(image)
-	Util.isolateChannel(a, "A")
-	Util.moveChannel(image, "B", "A")
-
-	if offset == 1 then
-		Util.shiftChannelRGBA(image, 1)
-		image:DrawImage(Vector2.zero, a, Enum.ImageCombineType.Add)
-	else
-		Util.moveChannel(image, "G", "B")
-
-		Util.shiftChannelRGBA(image, 2)
-		Util.moveChannel(image, "A", "R")
-
-		image:DrawImage(Vector2.zero, a, Enum.ImageCombineType.Add)
-	end
-
-	a:Destroy()
+function Util.setContrast(image: EditableImage, contrastF: number): ()
+	contrastF = math.clamp(contrastF, 0, 1)
+	Util.multiplyF(image, contrastF, contrastF, contrastF, 1)
+	Util.addF(image, 1 - contrastF, 1 - contrastF, 1 - contrastF, 0)
 end
 
-function Util.applySaturation(image: EditableImage, saturation: number): ()
-	saturation = math.clamp(saturation, 0, 1)
-	Util.multiplyF(image, saturation, saturation, saturation, 1)
-	Util.addF(image, 1 - saturation, 1 - saturation, 1 - saturation, 0)
-end
-
-function Util.applyValue(image: EditableImage, value: number): ()
-	value = math.clamp(value, 0, 1)
-	Util.multiplyF(image, value, value, value, 1)
+function Util.setBrightness(image: EditableImage, brightnessF: number): ()
+	brightnessF = math.clamp(brightnessF, 0, 1)
+	Util.multiplyF(image, brightnessF, brightnessF, brightnessF, 1)
 end
 
 function Util.tint(image: EditableImage, color: Color3): ()
@@ -273,18 +571,21 @@ end
 
 function Util.toMono(image: EditableImage, channel: Channel): ()
 	if channel == "R" then
-		Util.moveChannel(image, "R", "G")
-		Util.moveChannel(image, "R", "B")
+		Util.writeForEachPixelRGB(image, function(rU8, _, _)
+			return rU8, rU8, rU8
+		end)
 	elseif channel == "G" then
-		Util.moveChannel(image, "G", "R")
-		Util.moveChannel(image, "G", "B")
+		Util.writeForEachPixelRGB(image, function(_, gU8, _)
+			return gU8, gU8, gU8
+		end)
 	elseif channel == "B" then
-		Util.moveChannel(image, "B", "R")
-		Util.moveChannel(image, "B", "G")
-	elseif channel == "A" then
-		Util.moveChannel(image, "A", "R")
-		Util.moveChannel(image, "A", "G")
-		Util.moveChannel(image, "A", "B")
+		Util.writeForEachPixelRGB(image, function(_, _, bU8)
+			return bU8, bU8, bU8
+		end)
+	else -- A
+		Util.writeForEachPixelRGBA(image, function(_, _, _, aU8)
+			return aU8, aU8, aU8, aU8
+		end)
 	end
 end
 
@@ -345,25 +646,117 @@ function Util.crop(image: EditableImage, min: Vector2, max: Vector2): EditableIm
 	local clampedSize = Vector2.new(clampedWidth, clampedHeight)
 
 	local output = newBlank(clampedSize)
-
 	output:WritePixelsBuffer(Vector2.zero, clampedSize, image:ReadPixelsBuffer(min, clampedSize))
 
 	return output
 end
 
--- WARNING, this is a slower operation
-function Util.invertChannel(image: EditableImage, channel: Channel): ()
-	local buf = image:ReadPixelsBuffer(Vector2.zero, image.Size)
-	local offset = CHANNEL_INDEX[channel]
-	local rowWidth = 4 * image.Size.X
-	for y = 0, image.Size.Y - 1 do
-		local base = y * rowWidth
-		for x = 0, image.Size.X - 1 do
-			local index = base + x * 4 + offset
-			buffer.writeu8(buf, index, 255 - buffer.readu8(buf, index))
+function Util.getChannelRangeU8(image: EditableImage, channel: Channel): NumberRange
+	local min = 255
+	local max = 0
+
+	Util.readForEachInPixelChannel(image, channel, function(vU8)
+		if vU8 > max then
+			max = vU8
+		elseif vU8 < min then
+			min = vU8
 		end
+	end)
+
+	-- means it was never written to
+	if min > max then
+		min = max
 	end
-	image:WritePixelsBuffer(Vector2.zero, image.Size, buf)
+	if max == 0 then
+		max = 255
+	end
+	return NumberRange.new(min, max)
+end
+
+function Util.getRGBRangeU8(image: EditableImage): NumberRange
+	local min = 255
+	local max = 0
+
+	Util.readForEachPixelRGB(image, function(rU8: number, gU8: number, bU8: number)
+		local maxV = math.max(rU8, gU8, bU8)
+		local minV = math.min(rU8, gU8, bU8)
+		if maxV > max then
+			max = maxV
+		end
+		if minV < min then
+			min = minV
+		end
+	end)
+
+	-- means it was never written to
+	if min > max then
+		min = max
+	end
+	if max == 0 then
+		max = 255
+	end
+	return NumberRange.new(min, max)
+end
+
+function Util.getRGBARangeU8(image: EditableImage): NumberRange
+	local min = 255
+	local max = 0
+
+	Util.readForEachPixelRGBA(image, function(rU8: number, gU8: number, bU8: number, aU8: number)
+		local maxV = math.max(rU8, gU8, bU8, aU8)
+		local minV = math.min(rU8, gU8, bU8, aU8)
+		if maxV > max then
+			max = maxV
+		end
+		if minV < min then
+			min = minV
+		end
+	end)
+
+	-- means it was never written to
+	if min > max then
+		min = max
+	end
+	if max == 0 then
+		max = 255
+	end
+	return NumberRange.new(min, max)
+end
+
+function Util.normalizeChannel(image: EditableImage, channel: Channel): ()
+	local rangeU8 = Util.getChannelRangeU8(image, channel)
+	local minU8 = rangeU8.Min
+	local maxU8 = rangeU8.Max
+	local weightF = (maxU8 - minU8) / 255
+	Util.writeForEachInPixelChannel(image, channel, function(vU8)
+		return (vU8 - minU8) / weightF
+	end)
+end
+
+function Util.normalizeRGB(image: EditableImage): ()
+	local rangeU8 = Util.getRGBRangeU8(image)
+	local minU8 = rangeU8.Min
+	local maxU8 = rangeU8.Max
+	local weightF = (maxU8 - minU8) / 255
+	Util.writeForEachPixelRGB(image, function(r: number, g: number, b: number)
+		return (r - minU8) / weightF, (g - minU8) / weightF, (b - minU8) / weightF
+	end)
+end
+
+function Util.normalizeRGBA(image: EditableImage): ()
+	local rangeU8 = Util.getRGBARangeU8(image)
+	local minU8 = rangeU8.Min
+	local maxU8 = rangeU8.Max
+	local weightF = (maxU8 - minU8) / 255
+	Util.writeForEachPixelRGBA(image, function(r: number, g: number, b: number, a: number)
+		return (r - minU8) / weightF, (g - minU8) / weightF, (b - minU8) / weightF, (a - minU8) / weightF
+	end)
+end
+
+function Util.invertChannel(image: EditableImage, channel: Channel): ()
+	Util.writeForEachInPixelChannel(image, channel, function(vU8)
+		return 255 - vU8
+	end)
 end
 
 function Util.bind(inst: Instance, image: EditableImage): ()

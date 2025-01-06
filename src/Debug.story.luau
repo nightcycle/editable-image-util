@@ -58,14 +58,31 @@ return function(frame: Frame)
 				if brightnessState:changed() then
 					isRedrawNeeded = true
 				end
-				local saturationState = Iris.State(1)
-				if saturationState:changed() then
+				local contrastState = Iris.State(1)
+				if contrastState:changed() then
 					isRedrawNeeded = true
 				end
 				local hueState = Iris.State(0)
 				if hueState:changed() then
 					isRedrawNeeded = true
 				end
+				local isNormalized = Iris.State(false)
+				if isNormalized:changed() then
+					isRedrawNeeded = true
+				end
+				local isRedChannelNormalized = Iris.State(false)
+				if isRedChannelNormalized:changed() then
+					isRedrawNeeded = true
+				end
+				local isBlueChannelNormalized = Iris.State(false)
+				if isBlueChannelNormalized:changed() then
+					isRedrawNeeded = true
+				end
+				local isGreenChannelNormalized = Iris.State(false)
+				if isGreenChannelNormalized:changed() then
+					isRedrawNeeded = true
+				end
+
 				local isRedChannelEnabled = Iris.State(true)
 				if isRedChannelEnabled:changed() then
 					isRedrawNeeded = true
@@ -78,6 +95,7 @@ return function(frame: Frame)
 				if isGreenChannelEnabled:changed() then
 					isRedrawNeeded = true
 				end
+
 				local isAlphaChannelVisible = Iris.State(false)
 				if isAlphaChannelVisible:changed() then
 					isRedrawNeeded = true
@@ -97,6 +115,14 @@ return function(frame: Frame)
 						isRedChannelEnabled:set(true)
 						isGreenChannelEnabled:set(true)
 						isBlueChannelEnabled:set(true)
+						isNormalized:set(false)
+						isRedChannelNormalized:set(false)
+						isGreenChannelNormalized:set(false)
+						isBlueChannelNormalized:set(false)
+						isAlphaChannelVisible:set(false)
+						monoState:set("None")
+						channelShift:set(0)
+						contrastState:set(1)
 					end
 					Iris.InputNum({
 						[Iris.Args.InputNum.Text] = "Brightness" :: any,
@@ -105,11 +131,11 @@ return function(frame: Frame)
 						[Iris.Args.InputNum.Increment] = 0.1,
 					}, { number = brightnessState })
 					Iris.InputNum({
-						[Iris.Args.InputNum.Text] = "Saturation" :: any,
+						[Iris.Args.InputNum.Text] = "Constrast" :: any,
 						[Iris.Args.InputNum.Min] = 0,
 						[Iris.Args.InputNum.Max] = 1,
 						[Iris.Args.InputNum.Increment] = 0.1,
-					}, { number = saturationState })
+					}, { number = contrastState })
 					-- Iris.InputNum({
 					-- 	[Iris.Args.InputNum.Text] = "Hue",
 					-- 	[Iris.Args.InputNum.Min] = 0,
@@ -130,6 +156,34 @@ return function(frame: Frame)
 						Iris.Text({
 							`H={math.round(h * 360)},S={math.round(s * 100)},V={math.round(v * 100)}`,
 						})
+					end
+					do
+						Iris.Checkbox({
+							[Iris.Args.Checkbox.Text] = "Normalize RGB",
+						}, {
+							isChecked = isNormalized,
+						})
+						Iris.CollapsingHeader({
+							[Iris.Args.CollapsingHeader.Text] = "Channel Normalization",
+						}, { isUncollapsed = Iris.State(true) })
+						do
+							Iris.Checkbox({
+								[Iris.Args.Checkbox.Text] = "Red",
+							}, {
+								isChecked = isRedChannelNormalized,
+							})
+							Iris.Checkbox({
+								[Iris.Args.Checkbox.Text] = "Green",
+							}, {
+								isChecked = isGreenChannelNormalized,
+							})
+							Iris.Checkbox({
+								[Iris.Args.Checkbox.Text] = "Blue",
+							}, {
+								isChecked = isBlueChannelNormalized,
+							})
+						end
+						Iris.End()
 					end
 					do
 						Iris.CollapsingHeader({
@@ -160,7 +214,6 @@ return function(frame: Frame)
 						Iris.End()
 					end
 					do
-						print("monoState", monoState.value)
 						Iris.CollapsingHeader({
 							[Iris.Args.CollapsingHeader.Text] = "Monocolor",
 						}, { isUncollapsed = Iris.State(true) })
@@ -209,13 +262,13 @@ return function(frame: Frame)
 							end
 						end
 						do
-							local saturation = saturationState.value
-							if saturation ~= 1 then
-								Util.applySaturation(canvas, saturation)
+							local contrast = contrastState.value
+							if contrast ~= 1 then
+								Util.setContrast(canvas, contrast)
 							end
 						end
 
-						Util.applyValue(canvas, brightnessState.value)
+						Util.setBrightness(canvas, brightnessState.value)
 						Util.tint(canvas, colorState.value)
 						if not isRedChannelEnabled.value then
 							Util.clearChannel(canvas, "R")
@@ -225,6 +278,18 @@ return function(frame: Frame)
 						end
 						if not isBlueChannelEnabled.value then
 							Util.clearChannel(canvas, "B")
+						end
+						if isRedChannelNormalized.value then
+							Util.normalizeChannel(canvas, "R")
+						end
+						if isGreenChannelNormalized.value then
+							Util.normalizeChannel(canvas, "G")
+						end
+						if isBlueChannelNormalized.value then
+							Util.normalizeChannel(canvas, "B")
+						end
+						if isNormalized.value then
+							Util.normalizeRGB(canvas)
 						end
 						if isAlphaChannelVisible.value then
 							Util.clearChannel(canvas, "R")
