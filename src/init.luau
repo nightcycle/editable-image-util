@@ -2,7 +2,6 @@
 --!native
 -- Services
 local AssetService = game:GetService("AssetService")
-local CollectionService = game:GetService("CollectionService")
 
 -- Packages
 -- Modules
@@ -10,7 +9,6 @@ local CollectionService = game:GetService("CollectionService")
 -- Types
 export type Channel = "R" | "G" | "B" | "A"
 -- Constants
-local BINDING_TAG = "EditableImageUtilBound"
 local CHANNEL_INDEX: { [Channel]: number } = table.freeze({
 	R = 0,
 	G = 1,
@@ -18,13 +16,14 @@ local CHANNEL_INDEX: { [Channel]: number } = table.freeze({
 	A = 3,
 })
 -- Variables
-local DependentRegistry: { [EditableImage]: { Instance } } = {}
 -- References
 -- Private Functions
 function newBlank(size: Vector2): EditableImage
-	return AssetService:CreateEditableImage({
+	local image = AssetService:CreateEditableImage({
 		Size = size,
 	})
+	assert(image, "Failed to create image")
+	return image
 end
 
 -- Class
@@ -524,9 +523,7 @@ function Util.writeForEachInPixelChannel(
 end
 
 function Util.resize(image: EditableImage, size: Vector2, samplingMode: Enum.ResamplerMode?): EditableImage
-	local scaledImage = AssetService:CreateEditableImage({
-		Size = size,
-	})
+	local scaledImage = newBlank(size)
 	local scale = Vector2.new(size.X / (image.Size.X - 0), size.Y / (image.Size.Y - 0))
 
 	scaledImage:DrawImageTransformed(size / 2, scale, 0, image, {
@@ -757,61 +754,6 @@ function Util.invertChannel(image: EditableImage, channel: Channel): ()
 	Util.writeForEachInPixelChannel(image, channel, function(vU8)
 		return 255 - vU8
 	end)
-end
-
-function Util.bind(inst: Instance, image: EditableImage): ()
-	local dependents = DependentRegistry[image] or {}
-	DependentRegistry[image] = dependents
-	inst:AddTag(BINDING_TAG)
-	if not table.find(dependents, inst) then
-		table.insert(dependents, inst)
-	end
-end
-
-function Util.unbind(inst: Instance, image: EditableImage): ()
-	local dependents = DependentRegistry[image]
-	if not dependents then
-		error("Image not bound to instance")
-		return
-	end
-
-	pcall(function()
-		CollectionService:RemoveTag(inst, BINDING_TAG)
-	end)
-
-	local index = table.find(dependents, inst)
-	if index then
-		table.remove(dependents, index)
-	end
-
-	if #dependents == 0 then
-		DependentRegistry[image] = nil
-		image:Destroy()
-	end
-end
-
-function Util.unbindAll(inst: Instance): ()
-	for image, deps in pairs(DependentRegistry) do
-		if table.find(deps, inst) then
-			Util.unbind(inst, image)
-		end
-	end
-end
-
-function Util.initCleanUpListener(): () -> ()
-	local isAlive = true
-	local connection: RBXScriptConnection
-	local function cleanUp()
-		if not isAlive then
-			return
-		end
-		isAlive = false
-		connection:Disconnect()
-	end
-
-	connection = CollectionService:GetInstanceRemovedSignal(BINDING_TAG):Connect(Util.unbindAll)
-
-	return cleanUp
 end
 
 return Util
