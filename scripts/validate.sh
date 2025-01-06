@@ -8,6 +8,7 @@ luau-lsp analyze \
 	--ignore="**/Packages/**" \
 	--ignore="Packages/**" \
 	--ignore="*.spec.luau" \
+	--ignore="*.bench.luau" \
 	--settings=".luau-analyze.json" \
 	--definitions="types/globalTypes.d.lua" \
 	"src"
