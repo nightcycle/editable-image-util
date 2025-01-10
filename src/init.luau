@@ -123,58 +123,72 @@ function Util.subtractF(image: EditableImage, rF: number, gF: number, bF: number
 end
 
 function Util.addU8(image: EditableImage, rU8: number, gU8: number, bU8: number, aU8: number): ()
-	Util.tryCreateEditableImage(image.Size):match(function(mask: EditableImage)
-		Util.fillU8(mask, rU8, gU8, bU8, aU8)
-		image:DrawImage(Vector2.zero, mask, Enum.ImageCombineType.Add)
-		mask:Destroy()
-		return nil
-	end, function(err: string)
-		rU8 = math.round(rU8)
-		gU8 = math.round(gU8)
-		bU8 = math.round(bU8)
-		aU8 = math.round(aU8)
-		local function updateChannel(channel: Channel, addU8: number)
-			Util.writeForEachInPixelChannel(image, channel, function(vU8)
-				return vU8 + addU8
-			end)
-		end
-		local function updateRGB()
-			Util.writeForEachPixelRGB(image, function(r, g, b)
-				return r + rU8, g + gU8, b + bU8
-			end)
-		end
-		local function updateRGBA()
-			Util.writeForEachPixelRGBA(image, function(r, g, b, a)
-				return r + rU8, g + gU8, b + bU8, a + aU8
-			end)
-		end
-		if rU8 ~= 0 then
-			if gU8 == 0 and bU8 == 0 and aU8 == 0 then
-				updateChannel("R", rU8)
-			elseif aU8 == 0 then
-				updateRGB()
-			else
-				updateRGBA()
-			end
-		elseif gU8 ~= 0 then
-			if bU8 == 0 and aU8 == 0 then
-				updateChannel("G", gU8)
-			elseif aU8 == 0 then
-				updateRGB()
-			else
-				updateRGBA()
-			end
-		elseif bU8 ~= 0 then
-			if aU8 == 0 then
-				updateChannel("B", bU8)
-			else
-				updateRGBA()
-			end
-		elseif aU8 ~= 0 then
-			updateChannel("A", aU8)
-		end
-		return nil
-	end)
+	image:DrawRectangle(
+		Vector2.zero,
+		image.Size,
+		Color3.fromRGB(rU8, gU8, bU8),
+		1 - (math.max(aU8, 1) / 255),
+		Enum.ImageCombineType.Add
+	)
+	-- Util.tryCreateEditableImage(image.Size):match(function(mask: EditableImage)
+	-- 	Util.fillU8(mask, rU8, gU8, bU8, aU8)
+	-- 	-- image:DrawImage(Vector2.zero, mask, Enum.ImageCombineType.Add)
+	-- 	image:DrawRectangle(
+	-- 		Vector2.zero,
+	-- 		image.Size,
+	-- 		Color3.fromRGB(rU8, gU8, bU8),
+	-- 		1 - (math.max(aU8, 1) / 255),
+	-- 		Enum.ImageCombineType.Add
+	-- 	)
+	-- 	mask:Destroy()
+	-- 	return nil
+	-- end, function(err: string)
+	-- 	rU8 = math.round(rU8)
+	-- 	gU8 = math.round(gU8)
+	-- 	bU8 = math.round(bU8)
+	-- 	aU8 = math.round(aU8)
+	-- 	local function updateChannel(channel: Channel, addU8: number)
+	-- 		Util.writeForEachInPixelChannel(image, channel, function(vU8)
+	-- 			return vU8 + addU8
+	-- 		end)
+	-- 	end
+	-- 	local function updateRGB()
+	-- 		Util.writeForEachPixelRGB(image, function(r, g, b)
+	-- 			return r + rU8, g + gU8, b + bU8
+	-- 		end)
+	-- 	end
+	-- 	local function updateRGBA()
+	-- 		Util.writeForEachPixelRGBA(image, function(r, g, b, a)
+	-- 			return r + rU8, g + gU8, b + bU8, a + aU8
+	-- 		end)
+	-- 	end
+	-- 	if rU8 ~= 0 then
+	-- 		if gU8 == 0 and bU8 == 0 and aU8 == 0 then
+	-- 			updateChannel("R", rU8)
+	-- 		elseif aU8 == 0 then
+	-- 			updateRGB()
+	-- 		else
+	-- 			updateRGBA()
+	-- 		end
+	-- 	elseif gU8 ~= 0 then
+	-- 		if bU8 == 0 and aU8 == 0 then
+	-- 			updateChannel("G", gU8)
+	-- 		elseif aU8 == 0 then
+	-- 			updateRGB()
+	-- 		else
+	-- 			updateRGBA()
+	-- 		end
+	-- 	elseif bU8 ~= 0 then
+	-- 		if aU8 == 0 then
+	-- 			updateChannel("B", bU8)
+	-- 		else
+	-- 			updateRGBA()
+	-- 		end
+	-- 	elseif aU8 ~= 0 then
+	-- 		updateChannel("A", aU8)
+	-- 	end
+	-- 	return nil
+	-- end)
 end
 
 function Util.addF(image: EditableImage, rF: number, gF: number, bF: number, aF: number): ()
@@ -266,58 +280,66 @@ function Util.multiplyU8(image: EditableImage, rU8: number, gU8: number, bU8: nu
 		bU8 = math.clamp(bU8, 1, 255)
 		aU8 = math.clamp(aU8, 1, 255)
 
-		Util.tryCreateEditableImage(image.Size):match(function(mask: EditableImage)
-			Util.fillU8(mask, rU8, gU8, bU8, aU8)
-			image:DrawImage(Vector2.zero, mask, Enum.ImageCombineType.Multiply)
-			mask:Destroy()
-			return nil
-		end, function(err: string)
-			local rF = rU8 / 255
-			local gF = gU8 / 255
-			local bF = bU8 / 255
-			local aF = aU8 / 255
-			local function updateChannel(channel: Channel, multiF: number)
-				Util.writeForEachInPixelChannel(image, channel, function(vU8)
-					return vU8 * multiF
-				end)
-			end
-			local function updateRGB()
-				Util.writeForEachPixelRGB(image, function(r, g, b)
-					return r * rF, g * gF, b * bF
-				end)
-			end
-			local function updateRGBA()
-				Util.writeForEachPixelRGBA(image, function(r, g, b, a)
-					return r * rF, g * gF, b * bF, a * aF
-				end)
-			end
-			if rU8 ~= 255 then
-				if gU8 == 255 and bU8 == 255 and aU8 == 255 then
-					updateChannel("R", rF)
-				elseif aU8 == 255 then
-					updateRGB()
-				else
-					updateRGBA()
-				end
-			elseif gU8 ~= 255 then
-				if bU8 == 255 and aU8 == 255 then
-					updateChannel("G", gF)
-				elseif aU8 == 255 then
-					updateRGB()
-				else
-					updateRGBA()
-				end
-			elseif bU8 ~= 255 then
-				if aU8 == 255 then
-					updateChannel("B", bF)
-				else
-					updateRGBA()
-				end
-			elseif aU8 ~= 255 then
-				updateChannel("A", aF)
-			end
-			return nil
-		end)
+		image:DrawRectangle(
+			Vector2.zero,
+			image.Size,
+			Color3.fromRGB(rU8, gU8, bU8),
+			1 - (math.max(aU8, 1) / 255),
+			Enum.ImageCombineType.Multiply
+		)
+
+		-- Util.tryCreateEditableImage(image.Size):match(function(mask: EditableImage)
+		-- 	Util.fillU8(mask, rU8, gU8, bU8, aU8)
+		-- 	image:DrawImage(Vector2.zero, mask, Enum.ImageCombineType.Multiply)
+		-- 	mask:Destroy()
+		-- 	return nil
+		-- end, function(err: string)
+		-- 	local rF = rU8 / 255
+		-- 	local gF = gU8 / 255
+		-- 	local bF = bU8 / 255
+		-- 	local aF = aU8 / 255
+		-- 	local function updateChannel(channel: Channel, multiF: number)
+		-- 		Util.writeForEachInPixelChannel(image, channel, function(vU8)
+		-- 			return vU8 * multiF
+		-- 		end)
+		-- 	end
+		-- 	local function updateRGB()
+		-- 		Util.writeForEachPixelRGB(image, function(r, g, b)
+		-- 			return r * rF, g * gF, b * bF
+		-- 		end)
+		-- 	end
+		-- 	local function updateRGBA()
+		-- 		Util.writeForEachPixelRGBA(image, function(r, g, b, a)
+		-- 			return r * rF, g * gF, b * bF, a * aF
+		-- 		end)
+		-- 	end
+		-- 	if rU8 ~= 255 then
+		-- 		if gU8 == 255 and bU8 == 255 and aU8 == 255 then
+		-- 			updateChannel("R", rF)
+		-- 		elseif aU8 == 255 then
+		-- 			updateRGB()
+		-- 		else
+		-- 			updateRGBA()
+		-- 		end
+		-- 	elseif gU8 ~= 255 then
+		-- 		if bU8 == 255 and aU8 == 255 then
+		-- 			updateChannel("G", gF)
+		-- 		elseif aU8 == 255 then
+		-- 			updateRGB()
+		-- 		else
+		-- 			updateRGBA()
+		-- 		end
+		-- 	elseif bU8 ~= 255 then
+		-- 		if aU8 == 255 then
+		-- 			updateChannel("B", bF)
+		-- 		else
+		-- 			updateRGBA()
+		-- 		end
+		-- 	elseif aU8 ~= 255 then
+		-- 		updateChannel("A", aF)
+		-- 	end
+		-- 	return nil
+		-- end)
 	end
 end
 
